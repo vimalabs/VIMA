@@ -6,7 +6,7 @@
 [[PDF]](https://vimalabs.github.io/assets/vima_paper.pdf)
 [[Pretrained Models]](#Pretrained-Models)
 [[VIMA-Bench]](https://github.com/vimalabs/VimaBench)
-[[Training Data]](https://doi.org/10.5281/zenodo.7127587)
+[[Training Data]](https://huggingface.co/datasets/VIMA/VIMA-Data)
 [[Model Card]](model-card.md)
 
 [![Python Version](https://img.shields.io/badge/Python-3.9-blue.svg)](https://github.com/vimalabs/VIMA)
