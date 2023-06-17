@@ -38,10 +38,10 @@ Our provided model checkpoints are pre-trained on VIMA-Bench, which may not dire
 Our paper is posted on [arXiv](https://arxiv.org/abs/2210.03094). If you find our work useful, please consider citing us! 
 
 ```bibtex
-@article{jiang2022vima,
-  title   = {VIMA: General Robot Manipulation with Multimodal Prompts},
-  author  = {Yunfan Jiang and Agrim Gupta and Zichen Zhang and Guanzhi Wang and Yongqiang Dou and Yanjun Chen and Li Fei-Fei and Anima Anandkumar and Yuke Zhu and Linxi Fan},
-  year    = {2022},
-  journal = {arXiv preprint arXiv: Arxiv-2210.03094}
+@inproceedings{jiang2023vima,
+  title     = {VIMA: General Robot Manipulation with Multimodal Prompts},
+  author    = {Yunfan Jiang and Agrim Gupta and Zichen Zhang and Guanzhi Wang and Yongqiang Dou and Yanjun Chen and Li Fei-Fei and Anima Anandkumar and Yuke Zhu and Linxi Fan},
+  booktitle = {Fortieth International Conference on Machine Learning},
+  year      = {2023}
 }
 ```
