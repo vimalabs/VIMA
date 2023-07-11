@@ -3,8 +3,8 @@ from __future__ import annotations
 import torch
 import torch.nn as nn
 
+import vima.nn as vnn
 from ..utils import *
-from ...vima import nn as vnn
 
 
 class VIMAGPTPolicy(nn.Module):

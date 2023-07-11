@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 from einops import rearrange
 
-from ...vima import nn as vnn
+import vima.nn as vnn
 
 
 class VIMAFlamingoPolicy(nn.Module):

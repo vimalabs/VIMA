@@ -792,7 +792,6 @@ def _match_patterns_helper(element, patterns):
 
 
 def stack_sequence_fields(sequence):
-
     # Handle empty input sequences.
     if not sequence:
         raise ValueError("Input sequence must not be empty")
