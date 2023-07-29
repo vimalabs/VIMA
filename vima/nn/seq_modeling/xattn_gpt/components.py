@@ -38,6 +38,16 @@ class Block(nn.Module):
 
 
 class Attention(_Attention):
+    def __init__(self, nx, n_positions, config, scale=False):
+        super().__init__(nx, n_positions, config, scale)
+        self.register_buffer(
+            "bias",
+            torch.tril(torch.ones(n_positions, n_positions)).view(
+                1, 1, n_positions, n_positions
+            ),
+            persistent=True,
+        )
+
     def _attn(
         self, q, k, v, attention_mask=None, head_mask=None, output_attentions=False
     ):
