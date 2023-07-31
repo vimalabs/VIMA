@@ -31,7 +31,7 @@ pip install git+https://github.com/vimalabs/VIMA
 ```
 
 # Pretrained Models
-We host pretrained models covering a spectrum of model capacity on [HuggingFace](https://huggingface.co/VIMA/VIMA). Download links are listed below. The mask R-CNN model can be found [here](https://huggingface.co/VIMA/VIMA/resolve/main/mask_rcnn.pth).
+We host pretrained models covering a spectrum of model capacity on [Hugging Face](https://huggingface.co/VIMA/VIMA). Download links are listed below. The mask R-CNN model can be found [here](https://huggingface.co/VIMA/VIMA/resolve/main/mask_rcnn.pth).
 
 | [200M](https://huggingface.co/VIMA/VIMA/resolve/main/200M.ckpt) | [92M](https://huggingface.co/VIMA/VIMA/resolve/main/92M.ckpt) | [43M](https://huggingface.co/VIMA/VIMA/resolve/main/43M.ckpt) | [20M](https://huggingface.co/VIMA/VIMA/resolve/main/20M.ckpt) | [9M](https://huggingface.co/VIMA/VIMA/resolve/main/9M.ckpt) | [4M](https://huggingface.co/VIMA/VIMA/resolve/main/4M.ckpt) | [2M](https://huggingface.co/VIMA/VIMA/resolve/main/2M.ckpt)    |
 |-----------------------------------------------------------------|---------------------------------------------------------------|---------------------------------------------------------------|---------------------------------------------------------------|-------------------------------------------------------------|-------------------------------------------------------------|-----|
