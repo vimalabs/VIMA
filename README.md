@@ -46,7 +46,11 @@ To run the live demonstration, first follow the [instruction](https://github.com
 python3 scripts/example.py --ckpt={ckpt_path} --device={device} --partition={eval_level} --task={task}
 ```
 
-Here `eval_level` means one out of four evaluation levels and can be chosen from `placement_generalization`, `combinatorial_generalization`, `novel_object_generalization`, and `novel_task_generalization`. `task` means a specific task template. Please refer to [task suite](https://github.com/vimalabs/VimaBench/tree/main#task-suite) and [benchmark](https://github.com/vimalabs/VimaBench/tree/main#evaluation-benchmark) for more details.
+Here `eval_level` means one out of four evaluation levels and can be chosen from `placement_generalization`, `combinatorial_generalization`, `novel_object_generalization`, and `novel_task_generalization`. `task` means a specific task template. Please refer to [task suite](https://github.com/vimalabs/VimaBench/tree/main#task-suite) and [benchmark](https://github.com/vimalabs/VimaBench/tree/main#evaluation-benchmark) for more details. For example:
+
+```bash
+python3 scripts/example.py --ckpt=200M.ckpt --partition=placement_generalization --task=follow_order
+```
 
 After running the above command, we should see a PyBullet GUI pop up, alongside a small window showing the multimodal prompt. Then a robot arm should move to complete the corresponding task. Note that this demo may not work on headless machines since the PyBullet GUI requires a display.
 
