@@ -81,9 +81,10 @@ tokenizer = Tokenizer.from_pretrained("t5-base")
 tokenizer.add_tokens(PLACEHOLDER_TOKENS)
 from collections import defaultdict
 class VimaRecorder(object): 
-    def __init__(orientation='front',space='rgb',num_episodes=10) -> None:
+    def __init__(self,orientation='front',space='rgb',num_episodes=10) -> None:
         self.orientation = 'front' 
         self.space = space 
+        self.orientation = orientation 
         self.num_episodes=num_episodes 
         self._current_ep = 0  
         self.episodes=  defaultdict(list)
@@ -91,14 +92,17 @@ class VimaRecorder(object):
     def add_step(self,obs,done): 
         current_frame = self.get_frame(obs) 
         if  self.isOpen: 
-            self.episodes[self.current_ep].append(current_frame) 
+            self.episodes[self._current_ep].append(current_frame) 
         if self.isOpen and done: 
-            self.current_ep +=1 
-        if self.current_ep > self.num_episodes: 
+            self._current_ep +=1 
+        if self._current_ep > self.num_episodes: 
             self.isOpen = False  
         
     def get_frame(self,obs): 
-        return obs['stff'] 
+        arr = obs[self.space][self.orientation] 
+        #resturcture it so its in the same form as expected by matplotlib 
+        re_orient = np.moveaxis(arr,[0,1,2],[2,0,1])
+        return re_orient
 
 
 @torch.no_grad()
@@ -107,6 +111,7 @@ def main(cfg):
     print(cfg.partition)
     assert cfg.partition in ALL_PARTITIONS
     assert cfg.task in PARTITION_TO_SPECS["test"][cfg.partition]
+    recorder = VimaRecorder() 
 
     seed = 42
     policy = create_policy_from_ckpt(cfg.ckpt, cfg.device)
@@ -131,6 +136,7 @@ def main(cfg):
         env.global_seed = seed
 
         obs = env.reset()
+        recorder.add_step(obs,done=False)
 
         meta_info = env.meta_info
         prompt = env.prompt
@@ -263,7 +269,9 @@ def main(cfg):
             )
             actions = {k: v.cpu().numpy() for k, v in actions.items()}
             actions = any_slice(actions, np.s_[0, 0])
-            obs, _, done, info = env.step(actions)
+            obs, reward, done, info = env.step(actions)
+            recorder.add_step(obs=obs,done=done) 
+            print(f'got reward: {reward}')
             elapsed_steps += 1
 
 
