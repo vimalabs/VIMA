@@ -1,5 +1,7 @@
 from __future__ import annotations
+
 import os
+import pdb 
 import numpy as np
 from tokenizers import Tokenizer
 from tokenizers import AddedToken
@@ -12,8 +14,8 @@ from gym.wrappers import TimeLimit as _TimeLimit
 from gym import Wrapper
 import torch
 import argparse
-
-
+import mediapy as media 
+from vima_bench.env.wrappers.recorder import GUIRecorder
 os.environ["TOKENIZERS_PARALLELISM"] = "true"
 
 
@@ -75,11 +77,14 @@ tokenizer.add_tokens(PLACEHOLDER_TOKENS)
 
 @torch.no_grad()
 def main(cfg):
+    print(ALL_PARTITIONS)
+    print(cfg.partition)
     assert cfg.partition in ALL_PARTITIONS
     assert cfg.task in PARTITION_TO_SPECS["test"][cfg.partition]
 
     seed = 42
     policy = create_policy_from_ckpt(cfg.ckpt, cfg.device)
+    policy = policy.to('cuda')
     env = TimeLimitWrapper(
         ResetFaultToleranceWrapper(
             make(
@@ -87,19 +92,19 @@ def main(cfg):
                 modalities=["segm", "rgb"],
                 task_kwargs=PARTITION_TO_SPECS["test"][cfg.partition][cfg.task],
                 seed=seed,
-                render_prompt=True,
-                display_debug_window=True,
+                render_prompt=False,
+                display_debug_window=False,
                 hide_arm_rgb=False,
+                record_gui=False,
+
             )
         ),
         bonus_steps=2,
     )
-
     while True:
         env.global_seed = seed
 
         obs = env.reset()
-        env.render()
 
         meta_info = env.meta_info
         prompt = env.prompt
@@ -112,9 +117,9 @@ def main(cfg):
                     prompt=prompt, prompt_assets=prompt_assets, views=["front", "top"]
                 )
                 word_batch = word_batch.to(cfg.device)
-                image_batch = image_batch.to_torch_tensor(device=cfg.device)
+                image_batch = image_batch.to_torch_tensor(device='cuda:0')
                 prompt_tokens, prompt_masks = policy.forward_prompt_assembly(
-                    (prompt_token_type, word_batch, image_batch)
+                    (prompt_token_type, word_batch.to('cuda'), image_batch)
                 )
 
                 inference_cache["obs_tokens"] = []
@@ -234,8 +239,6 @@ def main(cfg):
             actions = any_slice(actions, np.s_[0, 0])
             obs, _, done, info = env.step(actions)
             elapsed_steps += 1
-            if done:
-                break
 
 
 def prepare_prompt(*, prompt: str, prompt_assets: dict, views: list[str]):
@@ -331,7 +334,7 @@ def prepare_prompt(*, prompt: str, prompt_assets: dict, views: list[str]):
                 }
                 # add mask
                 token["mask"] = {
-                    view: np.ones((n_objs_prompt[view],), dtype=np.bool)
+                    view: np.ones((n_objs_prompt[view],), dtype=bool)
                     for view in views
                 }
                 n_objs_to_pad = {
@@ -351,7 +354,7 @@ def prepare_prompt(*, prompt: str, prompt_assets: dict, views: list[str]):
                         for view in views
                     },
                     "mask": {
-                        view: np.zeros((n_objs_to_pad[view]), dtype=np.bool)
+                        view: np.zeros((n_objs_to_pad[view]), dtype=bool)
                         for view in views
                     },
                 }
@@ -499,6 +502,6 @@ if __name__ == "__main__":
     arg.add_argument("--partition", type=str, default="placement_generalization")
     arg.add_argument("--task", type=str, default="visual_manipulation")
     arg.add_argument("--ckpt", type=str, required=True)
-    arg.add_argument("--device", default="cpu")
+    arg.add_argument("--device", default="cuda:0")
     arg = arg.parse_args()
     main(arg)
