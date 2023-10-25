@@ -26,6 +26,12 @@ _kwargs = {
     "normalized": True,
 }
 
+## TODO: 
+"""
+You simply want to modify the program such that we store a certain number of vima episodes and also record the reward produced by the model 
+
+"""
+
 PLACEHOLDER_TOKENS = [
     AddedToken("{base_obj}", **_kwargs),
     AddedToken("{base_obj_1}", **_kwargs),
@@ -73,6 +79,26 @@ PLACEHOLDER_TOKENS = [
 PLACEHOLDERS = [token.content for token in PLACEHOLDER_TOKENS]
 tokenizer = Tokenizer.from_pretrained("t5-base")
 tokenizer.add_tokens(PLACEHOLDER_TOKENS)
+from collections import defaultdict
+class VimaRecorder(object): 
+    def __init__(orientation='front',space='rgb',num_episodes=10) -> None:
+        self.orientation = 'front' 
+        self.space = space 
+        self.num_episodes=num_episodes 
+        self._current_ep = 0  
+        self.episodes=  defaultdict(list)
+        self.isOpen = True 
+    def add_step(self,obs,done): 
+        current_frame = self.get_frame(obs) 
+        if  self.isOpen: 
+            self.episodes[self.current_ep].append(current_frame) 
+        if self.isOpen and done: 
+            self.current_ep +=1 
+        if self.current_ep > self.num_episodes: 
+            self.isOpen = False  
+        
+    def get_frame(self,obs): 
+        return obs['stff'] 
 
 
 @torch.no_grad()
