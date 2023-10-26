@@ -81,10 +81,14 @@ def index_action(action_d,index):
     """ Same as obvervations but acting overt the actions dictionary 
 
     """
-    new_dict = dict(): 
+    new_dict = dict()
     ##TODO:#Do a similar approach of indixing above where instead of having (num_steps,x,y) we have (x,y) 
-    pass 
-def model_train(policy,traj_info,device='cuda:0',opti): 
+    for e in action_d.keys(): 
+        new_dict[e] = action_d[e][index]
+    return new_dict
+
+
+def model_train(policy,traj_info,device='cuda:0',opti=None): 
     #step our model over a single trajectory
     traj_steps= traj_info['traj_meta']['steps']
     #i make a dummy enviroment just to pull some extra metadata information.  not used elsewhere
@@ -108,6 +112,7 @@ def model_train(policy,traj_info,device='cuda:0',opti):
         (prompt_token_type, word_batch, image_batch)
         )
     obs_d = traj_info['obs']
+    oracle_action_d = traj_info['action']
     for i in range(traj_steps): 
         #get the current observation   
         obs = index_observation(obs_d,c_step)
@@ -222,8 +227,19 @@ def model_train(policy,traj_info,device='cuda:0',opti):
             actions["pose1_rotation"], min=-1, max=1
         )
         ################# END COMPLICATED FORWARD STEP DO NOT TOUCH ###########
-        actions = {k: v.cpu().numpy() for k, v in actions.items()}
-        actions = any_slice(actions, np.s_[0, 0])
+        actions = {k: v.cpu() for k, v in actions.items()} #REMove the call to numpy 
+        oracle_action = index_action(action_d=oracle_action_d,index=c_step)  
+        ##TODO for the position  the oracle provides xyz positions so we need to shorten  those vectors to only use the first 2 columns 
+        
+        for k in actions.keys(): 
+            act = actions[k] 
+            oc_act = oracle_action[k] 
+            pdb.set_trace()
+            diff = torch.sum((act-oc_act)**2)
+        differences = torch.tensor([ ( actions[k]-oracle_action[k] )**2 for k in actions.keys()])
+        avv_diff = torch.mean(differences)
+        c_step = c_step+1 
+        pdb.set_trace()
         #TODO use get action function to get the expected function from the oracles action 
         #TODO copy the training loop of the people in stable_baselines 
         #TODO #https://github.com/hill-a/stable-baselines/blob/master/stable_baselines/common/base_class.py#L753
@@ -234,7 +250,7 @@ def model_train(policy,traj_info,device='cuda:0',opti):
     #TODO: maybe return a list of losses 
 
 def main(): 
-    from torch optim import Adam 
+    from torch.optim import Adam 
 
     seed = 42
     #TODO: for the purpose of time look up how to unzip a subfolder so you extract the relevant section
@@ -249,11 +265,11 @@ def main():
     policy = create_policy_from_ckpt(weight_path,device,ignore_statedict=None)
     policy.train()
     policy = policy.to(device)
-    opti = Adam(policy.parameters,lr=0.001)
+    opti = Adam(policy.parameters(),lr=0.001)
     for traj in trajectories:
         elapsed_steps =0  
         traj_info =  load_trajectory_info(traj)
-        model_train(policy,traj_info,opti)
+        model_train(policy=policy,traj_info=traj_info,device='cuda:0',opti=opti)
         
 
 
