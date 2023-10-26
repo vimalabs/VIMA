@@ -21,20 +21,21 @@ _kwargs = {
     "normalized": True,
 }
 
-## TODO: 
-"""
-You simply want to modify the program such that we store a certain number of vima episodes and also record the reward produced by the model 
 
-"""
-
-#for a given trajectory i should build a list of observations 
 
 
 def load_trajectory_info(traj_path):
+    """ Trajectories are stored in a hierachical fashion 
+    traj_directory/obs.pkl  <--  These are the rgb images representing the scene 
+    traj_directory/action.pkl  <--  These are the actions taken by the oracle 
+    traj_directory/trajectory.pkl  <-- contains number of steps, prmpt, prompt assets etc. useful stuff
+    """
+    #load  observations 
     with open(os.path.join(traj_path, "obs.pkl"), "rb") as f:
         obs = pkl.load(f)
+    #parse them as front and top trajectories 
     rgb_dict = {"front": [], "top": []}
-    #the frames will consist of the initial state an then + actions taken by model 
+    #the frames will consist of the initial state and then + actions taken by model 
     n_rgb_frames = len(os.listdir(os.path.join(traj_path, f"rgb_front")))
     #load all the frames 
     for view in ["front", "top"]:
@@ -51,19 +52,24 @@ def load_trajectory_info(traj_path):
                 )
             )
     rgb_dict = {k: np.stack(v, axis=0) for k, v in rgb_dict.items()}
-    # add the rgb 
+    # add the rgb  representation to the observation dict 
     obs['rgb'] = rgb_dict
-    #end_effector = obs.pop("ee")
+    #load actions to take 
     with open(os.path.join(traj_path, "action.pkl"), "rb") as f:
         action = pkl.load(f)
     with open(os.path.join(traj_path, "trajectory.pkl"), "rb") as f:
         traj_meta = pkl.load(f)
-    pdb.set_trace() 
+    #load the prompt the model would see 
     prompt = traj_meta.pop("prompt")
+    #these are assets needed for "rendering" by the model 
     prompt_assets = traj_meta.pop("prompt_assets")
     return  {'prompt':prompt,'prompt_assets':prompt_assets,'traj_meta':traj_meta,'action':action,'obs':obs}
 
 def index_observation(obs_d,index): 
+    """ observations have the structure (number_of_steps,h,w,c) 
+        we need to return new observations dictionary that is just  (1,h,w,c) 
+        index: which time step we will pull from 
+    """
     new_dict = dict() 
     for modality in ['rgb','segm']: 
         new_dict[modality]= dict()
@@ -72,10 +78,16 @@ def index_observation(obs_d,index):
     new_dict['ee'] = np.asarray(obs_d['ee'][index])
     return new_dict 
 def index_action(action_d,index): 
+    """ Same as obvervations but acting overt the actions dictionary 
+
+    """
     new_dict = dict(): 
+    ##TODO:#Do a similar approach of indixing above where instead of having (num_steps,x,y) we have (x,y) 
     pass 
-def model_train(policy,traj_info,device='cuda:0'): 
+def model_train(policy,traj_info,device='cuda:0',opti): 
+    #step our model over a single trajectory
     traj_steps= traj_info['traj_meta']['steps']
+    #i make a dummy enviroment just to pull some extra metadata information.  not used elsewhere
     env = make('rearrange',modalities=['segm','rgb'],task_kwargs=PARTITION_TO_SPECS["test"]['placement_generalization']['rearrange'],seed=42,render_prompt=False,display_debug_window=False,hide_arm_rgb=False,record_gui=False)
     env.reset() 
     meta_info = env.meta_info 
@@ -84,7 +96,7 @@ def model_train(policy,traj_info,device='cuda:0'):
     inference_cache["obs_tokens"] = []
     inference_cache["obs_masks"] = []
     inference_cache["action_tokens"] = []
-    #load the intiial observation data 
+    #load the intial observation data 
     prompt,prompt_assets = traj_info['prompt'],traj_info['prompt_assets']
     prompt_token_type, word_batch, image_batch = prepare_prompt(
         prompt=prompt, prompt_assets=prompt_assets, views=["front", "top"]
@@ -103,7 +115,7 @@ def model_train(policy,traj_info,device='cuda:0'):
         obs = prepare_obs(obs=obs, rgb_dict=None, meta=meta_info).to_torch_tensor(
             device=device
             )
-
+        ################# BEGIN COMPLICATED FORWARD STEP DO NOT TOUCH ###########
         obs_token_this_step, obs_mask_this_step = policy.forward_obs_token(obs)
         obs_token_this_step = obs_token_this_step.squeeze(0)
         obs_mask_this_step = obs_mask_this_step.squeeze(0)
@@ -209,33 +221,41 @@ def model_train(policy,traj_info,device='cuda:0'):
         actions["pose1_rotation"] = torch.clamp(
             actions["pose1_rotation"], min=-1, max=1
         )
+        ################# END COMPLICATED FORWARD STEP DO NOT TOUCH ###########
         actions = {k: v.cpu().numpy() for k, v in actions.items()}
         actions = any_slice(actions, np.s_[0, 0])
-        pdb.set_trace()
+        #TODO use get action function to get the expected function from the oracles action 
+        #TODO copy the training loop of the people in stable_baselines 
+        #TODO #https://github.com/hill-a/stable-baselines/blob/master/stable_baselines/common/base_class.py#L753
+        #TODO calculate the difference between the actions taken by the model and those of the oracle 
+        #TODO backproapagate said errorr  
+        #TODO step the model loss  using the optimizer 
+        #record the loss so we can at least plot it 
+    #TODO: maybe return a list of losses 
 
-
-
-
-    print('hi')
 def main(): 
+    from torch optim import Adam 
+
     seed = 42
+    #TODO: for the purpose of time look up how to unzip a subfolder so you extract the relevant section
+    #Path to the trajectories 
     trajectories = glob("/scratch/rlcorrea/vima_v6/rearrange_then_restore/*") 
+    #TODO filter the metadata.pkl from trajectories list 
     meta_path = "/scratch/rlcorrea/vima_v6/rearrange_then_restore/metadata.pkl"
     with open(meta_path,'rb') as f: 
         meta = pkl.load(f)
     device = 'cuda:0'
     weight_path ="/home/rlcorrea/CSE574_project_vima/model_weights/2M.ckpt"
     policy = create_policy_from_ckpt(weight_path,device,ignore_statedict=None)
+    policy.train()
     policy = policy.to(device)
+    opti = Adam(policy.parameters,lr=0.001)
     for traj in trajectories:
         elapsed_steps =0  
         traj_info =  load_trajectory_info(traj)
-        model_train(policy,traj_info)
-        # each trajectory has a number of steps 
+        model_train(policy,traj_info,opti)
         
 
-        print('hi')
-        #https://github.com/hill-a/stable-baselines/blob/master/stable_baselines/common/base_class.py#L753
 
 if __name__ == "__main__":
     main()
