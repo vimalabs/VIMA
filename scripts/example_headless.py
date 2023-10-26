@@ -136,10 +136,9 @@ def main(cfg):
         env.global_seed = seed
 
         obs = env.reset()
-        recorder.add_step(obs,done=False)
-
-        meta_info = env.meta_info
-        prompt = env.prompt
+        pdb.set_trace()
+        meta_info = env.meta_info  
+        prompt = ee.prompt
         prompt_assets = env.prompt_assets
         elapsed_steps = 0
         inference_cache = {}
@@ -273,6 +272,8 @@ def main(cfg):
             recorder.add_step(obs=obs,done=done) 
             print(f'got reward: {reward}')
             elapsed_steps += 1
+            if done:
+                break
 
 
 def prepare_prompt(*, prompt: str, prompt_assets: dict, views: list[str]):

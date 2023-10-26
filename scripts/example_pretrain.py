@@ -17,7 +17,9 @@ import argparse
 import mediapy as media 
 from vima_bench.env.wrappers.recorder import GUIRecorder
 os.environ["TOKENIZERS_PARALLELISM"] = "true"
-
+from glob import glob 
+import pickle as pkl 
+from PIL import Image 
 
 _kwargs = {
     "single_word": True,
@@ -106,9 +108,6 @@ class VimaRecorder(object):
 
 
 def main(cfg): 
-    from glob import glob 
-    import pickle as pkl 
-    from PIL import Image 
     assert cfg.partition in ALL_PARTITIONS
     assert cfg.task in PARTITION_TO_SPECS["test"][cfg.partition]
     seed = 42
