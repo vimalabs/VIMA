@@ -334,6 +334,12 @@ def prepare_prompt(*, prompt: str, prompt_assets: dict, views: list[str]):
                 # add mask
                 token["mask"] = {
                     view: np.ones((n_objs_prompt[view],), dtype=np.bool)
+                    '''
+                    np.bool  has been deprecated/discarded, since numpy 1.20. 
+                    Solution for using newest version numpy. place <np.bool> with <bool>
+                    
+                    '''
+                    # view: np.ones((n_objs_prompt[view],), dtype=bool) 
                     for view in views
                 }
                 n_objs_to_pad = {
@@ -354,6 +360,11 @@ def prepare_prompt(*, prompt: str, prompt_assets: dict, views: list[str]):
                     },
                     "mask": {
                         view: np.zeros((n_objs_to_pad[view]), dtype=np.bool)
+                        '''
+                        np.bool  has been deprecated/discarded, since numpy 1.20. 
+                        Solution for using newest version numpy. place <np.bool> with <bool>
+                        '''
+                        # view: np.zeros((n_objs_to_pad[view]), dtype=bool)
                         for view in views
                     },
                 }
