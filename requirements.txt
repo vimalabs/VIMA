@@ -3,4 +3,4 @@ torch
 kornia
 einops
 tokenizers
-transformers
+transformers==4.20.0  
